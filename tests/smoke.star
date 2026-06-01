@@ -1,4 +1,4 @@
-TOOL = "oras.exe" if ocx.platform()["os"] == "windows" else "oras"
+TOOL = "oras.exe" if str(ocx.target_platform.os) == "windows" else "oras"
 
 r_version = ocx.run(TOOL, "version")
 expect.ok(r_version)
