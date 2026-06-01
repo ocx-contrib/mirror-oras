@@ -14,6 +14,12 @@ assets:
     - "oras_\\d+\\.\\d+\\.\\d+_linux_amd64\\.tar\\.gz$"
   linux/arm64:
     - "oras_\\d+\\.\\d+\\.\\d+_linux_arm64\\.tar\\.gz$"
+  darwin/amd64:
+    - "oras_\\d+\\.\\d+\\.\\d+_darwin_amd64\\.tar\\.gz$"
+  darwin/arm64:
+    - "oras_\\d+\\.\\d+\\.\\d+_darwin_arm64\\.tar\\.gz$"
+  windows/amd64:
+    - "oras_\\d+\\.\\d+\\.\\d+_windows_amd64\\.zip$"
 
 asset_type:
   type: archive
@@ -51,6 +57,15 @@ platforms:
     runner: ubuntu-latest
   linux/arm64:
     runner: ubuntu-24.04-arm
+  darwin/amd64:
+    runner: macos-latest
+    prefix: ["arch", "-x86_64"]
+  darwin/arm64:
+    runner: macos-latest
+    shell: bash
+  windows/amd64:
+    runner: windows-latest
+    shell: pwsh
 
 notify:
   discord:
