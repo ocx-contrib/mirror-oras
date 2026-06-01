@@ -1,0 +1,22 @@
+---
+title: ORAS
+description: OCI Registry As Storage — push and pull arbitrary artifacts to and from OCI registries
+keywords: oras,oci,registry,artifacts,containers,supply-chain,cncf
+---
+
+# ORAS
+
+ORAS (OCI Registry As Storage) is a CLI for managing content — artifacts,
+images, and arbitrary files — in OCI-compliant registries. It lets you push and
+pull artifacts alongside container images using the same registry, with support
+for referrers, attached files, and manifest discovery. ORAS is a CNCF project.
+
+## What's included
+
+- **oras** — push, pull, attach, copy, and discover OCI artifacts
+
+## Links
+
+- [ORAS Documentation](https://oras.land)
+- [ORAS on GitHub](https://github.com/oras-project/oras)
+- [ORAS CLI Reference](https://oras.land/docs/category/oras-commands)
