@@ -1,11 +1,14 @@
-TOOL = "oras.exe" if str(ocx.target_platform.os) == "windows" else "oras"
+TOOL = "oras.exe" if ocx.target_platform.os == ocx.os.Windows else "oras"
 
-r_version = ocx.run(TOOL, "version")
-expect.ok(r_version)
-expect.eq(r_version.exit_code, 0)
-expect.contains(r_version.stdout, "Version")
+# Tier 1 + 2: liveness + version shape.
+# oras prints its version via `oras version` (a line like "Version: 1.3.0").
+r = ocx.run(TOOL, "version")
+expect.ok(r)
+expect.matches(r.stdout, r"\d+\.\d+\.\d+")
 
-r_help = ocx.run(TOOL, "--help")
-expect.eq(r_help.exit_code, 0)
-expect.contains(r_help.stdout, "push")
-expect.contains(r_help.stdout, "pull")
+# Tier 3: subcommand presence — the core ORAS surface exists.
+# Subcommand NAMES are the contract; their help prose is upstream's to reword.
+expect.eq(ocx.run(TOOL, "push", "--help").exit_code, 0)
+expect.eq(ocx.run(TOOL, "pull", "--help").exit_code, 0)
+
+# Tier 4: not applicable — metadata.json declares PATH only.
