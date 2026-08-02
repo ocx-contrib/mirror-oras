@@ -1,0 +1,110 @@
+extends: ../mirror-base.yml
+
+name: oras
+
+# Logical index package `oras-project/oras` at the physical path
+# `ghcr.io/ocx-contrib/oras-project/oras` — slash segments, never
+# hyphen-flattened. The first segment must be this repo's own GitHub owner:
+# GITHUB_TOKEN only authorises packages owned by the repo the workflow runs in.
+#
+# The namespace is upstream's own GitHub org `oras-project` — a real project
+# org, not a personal handle, so it names the package directly.
+#
+# Succeeds the flat `ocx.sh/oras` coordinate this repository published before
+# the grouped layout, the same way mirror-kitware/cmake succeeds mirror-cmake.
+target:
+  registry: ghcr.io
+  repository: ocx-contrib/oras-project/oras
+
+source:
+  type: github_release
+  owner: oras-project
+  repo: oras
+  tag_pattern: "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+
+# ─── libc gate (Phase 3.5) — the evidence, not the conclusion ───────────────
+#
+# oras is a pure-Go binary built without cgo, so upstream ships ONE Linux build
+# per arch and it is fully static. Measured on v1.3.3:
+#
+#   $ file oras            (from oras_1.3.3_linux_amd64.tar.gz)
+#   ELF 64-bit LSB executable, x86-64, statically linked, stripped
+#   $ readelf -l oras | grep INTERP  → (none)
+#   $ readelf -d oras | grep NEEDED  → (none)
+#
+# Same result on linux/arm64 (fleet byte-audit,
+# ../../.claude/libc-audit-2026-08-01.json). No PT_INTERP and no DT_NEEDED
+# means the artifact requires nothing of the host, so both Linux keys are BARE
+# — no `+libc.*` suffix. Upstream publishes no musl/alpine variant, so there is
+# no counterpart to split against. Container legs (ubuntu + alpine + fedora)
+# live in ../mirror-base.yml and are what turn that claim into evidence.
+#
+# ─── Scope (verified across EVERY in-range release: v1.3.0 … v1.3.3)
+#
+# Upstream also publishes, and this mirror deliberately does not carry:
+#   oras_<V>_linux_{armv7,loong64,ppc64le,riscv64,s390x}.tar.gz — no GHA runner
+#   oras_<V>_freebsd_amd64.tar.gz                              — no GHA runner
+#   *.asc, *.sbom.json, oras_<V>_checksums.txt{,.asc}          — sidecars
+#
+# There is NO `oras_<V>_windows_arm64.zip` upstream — windows/amd64 is the only
+# Windows artifact that exists, which is why the matrix declares five platforms
+# rather than six.
+#
+# The anchored ^…$ regexes are what keep the sidecars out — `^…\.tar\.gz$` does
+# not match `….tar.gz.asc` or `….tar.gz.sbom.json`, and `_linux_arm64` does not
+# match `_linux_armv7`. Resolution verified BOTH ways across all four in-range
+# releases: each of the five patterns matches EXACTLY one asset. A pattern
+# matching zero is silently skipped, not an error — it would yield a green run
+# with a missing platform.
+assets:
+  linux/amd64:
+    - "^oras_\\d+\\.\\d+\\.\\d+_linux_amd64\\.tar\\.gz$"
+  linux/arm64:
+    - "^oras_\\d+\\.\\d+\\.\\d+_linux_arm64\\.tar\\.gz$"
+  darwin/amd64:
+    - "^oras_\\d+\\.\\d+\\.\\d+_darwin_amd64\\.tar\\.gz$"
+  darwin/arm64:
+    - "^oras_\\d+\\.\\d+\\.\\d+_darwin_arm64\\.tar\\.gz$"
+  windows/amd64:
+    - "^oras_\\d+\\.\\d+\\.\\d+_windows_amd64\\.zip$"
+
+asset_type:
+  # Every archive is FLAT — `oras` (`oras.exe` on Windows) and `LICENSE` sit at
+  # the archive root with no wrapper directory. Verified on all four in-range
+  # releases and on the darwin/windows archives. Nothing to strip, so the
+  # executable lands directly in ${installPath} — which is also why
+  # `bin_scan` must stay `off` (see ../mirror-base.yml).
+  type: archive
+  strip_components: 0
+
+metadata:
+  default: metadata.json
+
+catalog:
+  logo: logo.svg
+
+versions:
+  # 1.3.0 is the first release carrying the full five-platform asset set this
+  # spec declares.
+  min: "1.3.0"
+  new_per_run: 5
+  poll_interval: "0 */6 * * *"
+
+tests:
+  # `script:` resolves from the REPOSITORY ROOT — unlike `metadata.default` and
+  # `catalog.logo` above, which resolve against this spec's own directory.
+  - name: smoke
+    script: oras/tests/smoke.star
+
+annotations:
+  # From the Phase 1.5 license gate:
+  #   $ gh api repos/oras-project/oras/license --jq '.license.spdx_id'
+  #   Apache-2.0
+  # Confirmed by the LICENSE file shipped inside every mirrored archive.
+  org.opencontainers.image.licenses: "Apache-2.0"
+
+announce:
+  # Spelled out, not derived from target.repository — the logical name and the
+  # physical path are related by convention only.
+  package: oras-project/oras
+  fork: ocx-contrib/index
